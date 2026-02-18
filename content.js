@@ -91,7 +91,31 @@
         if (fastStepInterval) {
             clearInterval(fastStepInterval);
             fastStepInterval = null;
+            playChime();
         }
+    }
+
+    function playChime() {
+        // Simple beep/chime using Web Audio API
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1); // Slide to A5
+
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
     }
 
     function checkForVideoAndExtras() {
@@ -105,14 +129,17 @@
             // 1. Create button only if video exists
             createFastStepButton();
 
-            // 2. Expose controls
+            // 2. Expose controls and bring to front
             if (!video.controls) {
                 video.controls = true;
-                console.log("Exposed video controls.");
             }
+            // Aggressive z-index to show default controls
+            video.style.zIndex = "2147483647";
+            video.style.position = "relative"; // Ensure z-index applies if not already positioned
 
             // 3. Remove blockers
-            const blockers = document.querySelectorAll('.noUI-handle, .vjs-control-bar, .pp-ui-click-layer, .pp-ui-layer, .pp-ui-standard');
+            // Hiding known overlay classes
+            const blockers = document.querySelectorAll('.noUI-handle, .vjs-control-bar, .pp-ui-click-layer, .pp-ui-layer, .pp-ui-standard, .playposit-video-controls, .vjs-big-play-button');
             blockers.forEach(el => {
                 if (el.style.display !== 'none') {
                     el.style.display = 'none';
