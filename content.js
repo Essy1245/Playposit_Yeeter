@@ -12,6 +12,14 @@
     window.playpositYeeterLoaded = true;
     console.log("Playposit Yeeter initializing...");
 
+    // Inject the visibility spoofer into the main world
+    const script = document.createElement('script');
+    script.src = chrome.runtime.getURL('inject.js');
+    script.onload = function () {
+        this.remove();
+    };
+    (document.head || document.documentElement).appendChild(script);
+
     // Configuration
     const SKIP_INTERVAL_MS = 100; // How often to skip
     const SKIP_AMOUNT_S = 2;      // How much to skip per interval
@@ -68,7 +76,7 @@
             }
 
             if (currentVideo.paused || currentVideo.ended) {
-                console.log("Video paused or ended, stopping FastStep.");
+                console.log("Video paused (likely by question or user), stopping FastStep.");
                 stopFastStep();
                 const btn = document.getElementById('fast-step-btn');
                 if (btn) {
@@ -135,25 +143,68 @@
             // 1. Create button only if video exists
             createFastStepButton();
 
-            // 2. Expose controls and bring to front
+            // 1.5 Auto-start if needed
+            if (video.paused && video.currentTime < 0.5) {
+                console.log("Video seemingly not started. Attempting auto-start...");
+                // Try to find big play buttons
+                const playBtns = document.querySelectorAll('.vjs-big-play-button, .play-button, .pp-ui-big-play-button, button[title="Play Video"]');
+                playBtns.forEach(btn => {
+                    // Only click if visible-ish
+                    if (btn.offsetParent !== null && btn.style.display !== 'none') {
+                        console.log("Clicking big play button:", btn);
+                        btn.click();
+                    }
+                });
+
+                // Also try direct play if no button or button didn't work immediately
+                // However, play() might fail without user interaction. 
+                // But the user interaction IS clicking the extension, so we are in a trusted event loop?
+                // No, content script runs after the click, but the `run_command` logic implies direct execution? 
+                // The content script logic runs after `chrome.scripting.executeScript`.
+                // This is triggered by user click, so it counts as user activation!
+                video.play().catch(e => console.log("Direct play() failed (expected if waiting for overlay):", e));
+            }
+
+            // 2. Expose controls
             if (!video.controls) {
                 video.controls = true;
             }
-            // Aggressive z-index to show default controls
-            video.style.zIndex = "2147483647";
-            video.style.position = "relative"; // Ensure z-index applies if not already positioned
 
-            // 3. Remove blockers
-            // Hiding known overlay classes
-            const blockers = document.querySelectorAll('.noUI-handle, .vjs-control-bar, .pp-ui-click-layer, .pp-ui-layer, .pp-ui-standard, .playposit-video-controls, .vjs-big-play-button');
-            blockers.forEach(el => {
-                if (el.style.display !== 'none') {
-                    el.style.display = 'none';
-                }
+            // Revert aggressive styling that might break layout
+            // We focus on removing the blockers instead.
+            // If we really need z-index, we should check if it's covered.
+            // But usually hiding the overlays is enough.
+            // If the video is hidden, it might be due to position relative moving it out of flex/grid flow or absolute container.
+
+            // Let's try to just ensure it's visible but not move it.
+            video.style.visibility = 'visible';
+            video.style.opacity = '1';
+
+            // 3. Remove blockers / Enable interaction
+            // Instead of hiding elements (which might hide the video if it's nested inside), 
+            // we make them transparent to clicks.
+
+            // Major layers that might wrap the video: make them see-through for clicks
+            const wrappers = document.querySelectorAll('.pp-ui-layer, .pp-ui-click-layer, .pp-ui-standard');
+            wrappers.forEach(el => {
+                el.style.pointerEvents = 'none';
+            });
+
+            // Specific controls that block view or interaction: hide them or make them click-through
+            // "noUI-handle" and "control-bar" are overlaid controls, safe to hide usually, 
+            // but if we just want native controls, avoiding display:none is safer for layout.
+            const controls = document.querySelectorAll('.noUI-handle, .vjs-control-bar, .playposit-video-controls, .vjs-big-play-button');
+            controls.forEach(el => {
+                el.style.display = 'none'; // These are definitely just UI on top
+                // Double safety
+                el.style.pointerEvents = 'none';
             });
 
             const overlay = document.querySelector('.video-overlay');
-            if (overlay) overlay.style.display = 'none';
+            if (overlay) {
+                overlay.style.display = 'none';
+                overlay.style.pointerEvents = 'none';
+            }
         } else {
             // If we are in the top frame and don't see a video, but see iframes, log it.
             const iframes = document.querySelectorAll('iframe');

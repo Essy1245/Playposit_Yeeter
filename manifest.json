@@ -24,5 +24,15 @@
         "*://canvas.asu.edu/*",
         "*://*.playposit.com/*",
         "file:///*"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "inject.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
     ]
 }
