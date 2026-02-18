@@ -14,7 +14,7 @@
 
     // Configuration
     const SKIP_INTERVAL_MS = 100; // How often to skip
-    const SKIP_AMOUNT_S = 1;      // How much to skip per interval
+    const SKIP_AMOUNT_S = 2;      // How much to skip per interval
 
     let fastStepInterval = null;
     let currentVideo = null;
@@ -91,8 +91,14 @@
         if (fastStepInterval) {
             clearInterval(fastStepInterval);
             fastStepInterval = null;
-            playChime();
+            playChimeSequence(3);
         }
+    }
+
+    function playChimeSequence(count) {
+        if (count <= 0) return;
+        playChime();
+        setTimeout(() => playChimeSequence(count - 1), 400);
     }
 
     function playChime() {

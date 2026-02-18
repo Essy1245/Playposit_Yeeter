@@ -1,6 +1,7 @@
 #fast-step-btn {
   position: fixed;
-  bottom: 20px;
+  top: 60px;
+  /* Avoid potential top bar overlap */
   right: 20px;
   z-index: 99999;
   padding: 10px 20px;
@@ -11,7 +12,7 @@
   cursor: pointer;
   font-family: sans-serif;
   font-weight: bold;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   transition: transform 0.1s;
 }
 
