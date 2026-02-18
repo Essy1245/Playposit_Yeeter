@@ -22,6 +22,7 @@
     "host_permissions": [
         "*://*.instructure.com/*",
         "*://canvas.asu.edu/*",
+        "*://*.playposit.com/*",
         "file:///*"
     ]
 }
