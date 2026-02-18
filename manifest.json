@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Playposit Yeeter",
+  "version": "1.0",
+  "description": "Exposes default video controls and adds a fast-forward button for PlayPosit players.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.playposit.com/*",
+        "file:///*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "host_permissions": [
+    "*://*.playposit.com/*",
+    "file:///*"
+  ]
+}

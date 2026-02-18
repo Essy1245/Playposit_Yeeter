@@ -1,0 +1,26 @@
+#fast-step-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 99999;
+  padding: 10px 20px;
+  background-color: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: sans-serif;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: transform 0.1s;
+}
+
+#fast-step-btn:active {
+  transform: scale(0.95);
+  background-color: #e84118;
+}
+
+#fast-step-btn.active {
+  background-color: #2ed573;
+  content: "Fast Stepping...";
+}
