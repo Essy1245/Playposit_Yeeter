@@ -9,22 +9,15 @@
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
     },
-    "content_scripts": [
-        {
-            "matches": [
-                "*://*.instructure.com/*",
-                "*://canvas.asu.edu/*",
-                "file:///*"
-            ],
-            "js": [
-                "content.js"
-            ],
-            "css": [
-                "styles.css"
-            ],
-            "run_at": "document_end",
-            "all_frames": true
-        }
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_title": "Yeet Playposit"
+    },
+    "permissions": [
+        "activeTab",
+        "scripting"
     ],
     "host_permissions": [
         "*://*.instructure.com/*",

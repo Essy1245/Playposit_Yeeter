@@ -1,26 +1,40 @@
 // Playposit Yeeter Content Script
 
-console.log("Playposit Yeeter loaded.");
+if (window.playpositYeeterLoaded) {
+    console.log("Playposit Yeeter already loaded. Re-running checks.");
+    // If we want to toggle or expose controls again, we can.
+    // But mainly we want to avoid duplicate listeners or observers if not careful.
+    // The existing observer is on document.body.
+    // Let's just return to avoid re-initiating observer if it's already running.
+    // However, fast step button might be removed if page changed dynamically? Unlikely for single page app without reload.
+    // Let's just create the button if missing.
+    // We need to ensure these functions are defined globally or accessible if called here.
+    // For now, let's assume they are defined within the scope of the content script.
+    // If they are defined inside the 'else' block, this call would fail.
+    // The most robust way is to define functions globally or ensure they are hoisted/accessible.
+    // Given the instruction's structure, it implies the functions are defined within the 'else' block
+    // but then calls them from the 'if' block, which is a contradiction for typical JS scope.
+    // A common pattern for content scripts is to define functions at the top level,
+    // and then wrap the *initialization logic* in the if/else.
+    // Let's define the functions first, then wrap the execution.
 
-// Configuration
-const SKIP_INTERVAL_MS = 100; // How often to skip
-const SKIP_AMOUNT_S = 1;      // How much to skip per interval
+    // Re-calling these functions here assumes they are defined in the global scope of the content script.
+    // If they are defined inside the `else` block, this `if` block would not have access to them.
+    // The instruction implies `createFastStepButton()` is defined later, but called here.
+    // This suggests the functions should be defined outside the `if/else` block, and only the `init()` call is conditional.
+    // Let's adjust the interpretation: the functions themselves are global to the script,
+    // and only the *initial execution* of `init()` is guarded.
+    // The instruction's `createFastStepButton()` call in the `if` block and then `{{ ... }}` for its definition
+    // within the `else` block is problematic.
 
-let fastStepInterval = null;
-let currentVideo = null;
+    // Let's assume the instruction meant to guard the *initialization* of the script,
+    // and the functions themselves are always available.
+    // So, the functions should remain outside the if/else, and only the `init()` call is conditional.
+    // The instruction's provided code snippet is a bit ambiguous on this.
+    // I will place the functions outside the if/else, and only the `init()` call and global flag setting inside the else.
+    // This makes `checkForVideoAndExtras()` and `createFastStepButton()` available to the `if` block.
 
-function init() {
-    createFastStepButton();
-    startObserver();
-    // Also run once immediately in case the video is already there
     checkForVideoAndExtras();
-}
-
-function createFastStepButton() {
-    if (document.getElementById('fast-step-btn')) return;
-
-    const btn = document.createElement('button');
-    btn.id = 'fast-step-btn';
     btn.textContent = 'FastStep';
     btn.addEventListener('click', toggleFastStep);
     document.body.appendChild(btn);
