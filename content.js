@@ -21,8 +21,8 @@
     (document.head || document.documentElement).appendChild(script);
 
     // Configuration
-    const SKIP_INTERVAL_MS = 100; // How often to skip
-    const SKIP_AMOUNT_S = 2;      // How much to skip per interval
+    const SKIP_INTERVAL_MS = 90; // How often to skip
+    const SKIP_AMOUNT_S = 5;      // How much to skip per interval
 
     let fastStepInterval = null;
     let currentVideo = null;
