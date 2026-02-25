@@ -1,7 +1,7 @@
+
 #fast-step-btn {
   position: fixed;
   top: 60px;
-  /* Avoid potential top bar overlap */
   right: 20px;
   z-index: 99999;
   padding: 10px 20px;
@@ -23,5 +23,30 @@
 
 #fast-step-btn.active {
   background-color: #2ed573;
-  content: "Fast Stepping...";
+}
+
+#solve-btn {
+  position: fixed;
+  top: 110px; /* Below FastStep */
+  right: 20px;
+  z-index: 99999;
+  padding: 10px 20px;
+  background-color: #3742fa; /* Blue */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: sans-serif;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s;
+}
+
+#solve-btn:active {
+  transform: scale(0.95);
+  background-color: #341f97;
+}
+
+#solve-btn.active {
+  background-color: #2ed573; /* Green for active */
 }
