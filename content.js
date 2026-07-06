@@ -455,8 +455,15 @@
 
                 // If the correct answer was revealed, save it for instant replay!
                 if (feedback.revealedAnswer && qKey) {
-                    console.log("Correct answer REVEALED during retry!", feedback.revealedAnswer);
-                    this.saveAnswer(qKey, feedback.revealedAnswer);
+                    const revealedStr = JSON.stringify([...feedback.revealedAnswer].sort());
+                    const comboStr = qCombo ? JSON.stringify([...qCombo].sort()) : null;
+                    
+                    if (revealedStr === comboStr) {
+                        console.log("Revealed answer exactly matches the WRONG guess. Ignoring it as a false positive.", feedback.revealedAnswer);
+                    } else {
+                        console.log("Correct answer REVEALED during retry!", feedback.revealedAnswer);
+                        this.saveAnswer(qKey, feedback.revealedAnswer);
+                    }
                 }
 
                 retryBtn.click();
@@ -708,11 +715,67 @@
             const correctLabels = [];
 
             for (const input of inputs) {
-                const container = input.closest('.v-radio, .v-checkbox') || input.parentElement;
+                // Playposit choices are often in an li, .v-list-item, or a dedicated choice wrapper.
+                const container = input.closest('li, .v-list-item, .pp-choice, .choice-wrapper, .v-radio, .v-checkbox') || input.parentElement;
                 if (!container) continue;
 
                 let isMarkedCorrect = false;
+                let isMarkedIncorrect = false;
+                
+                // 1. Check for incorrect indicators first
+                let elError = container;
+                for (let i = 0; i < 4 && elError && elError !== document.body; i++) {
+                    const classStr = (typeof elError.className === 'string') ? elError.className : (elError.className?.toString?.() || '');
+                    if (/\bincorrect\b/i.test(classStr) ||
+                        /\berror\b/i.test(classStr) ||
+                        /\bwrong\b/i.test(classStr) ||
+                        /\bfail\b/i.test(classStr) ||
+                        /\bis-incorrect\b/i.test(classStr) ||
+                        /\bpp-incorrect\b/i.test(classStr)) {
+                        isMarkedIncorrect = true;
+                        break;
+                    }
+                    elError = elError.parentElement;
+                }
 
+                if (!isMarkedIncorrect) {
+                     // Check for X icons (close/clear) anywhere near the container
+                     const icons = container.parentElement ? container.parentElement.querySelectorAll('i, .v-icon, svg, span[class*="icon"]') : container.querySelectorAll('i, .v-icon, svg, span[class*="icon"]');
+                     for (const icon of icons) {
+                        const text = (icon.innerText || icon.textContent || '').trim().toLowerCase();
+                        const cls = (typeof icon.className === 'string') ? icon.className : '';
+                        if (text === 'close' || text === 'clear' || text === 'cancel' || cls.includes('mdi-close') || cls.includes('fa-times')) {
+                            isMarkedIncorrect = true;
+                            break;
+                        }
+                     }
+                }
+                
+                // Check if it's red
+                if (!isMarkedIncorrect) {
+                    try {
+                        const targets = [container];
+                        const label = container.querySelector('label');
+                        if (label) targets.push(label);
+
+                        for (const target of targets) {
+                            const style = getComputedStyle(target);
+                            const color = style.color;
+                            // Red variants
+                            if (color.includes('255, 0, 0') || color.includes('F44336') || color.includes('244, 67, 54') || color.includes('211, 47, 47')) {
+                                isMarkedIncorrect = true;
+                                break;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                // If it's explicitly marked incorrect, DO NOT extract it.
+                if (isMarkedIncorrect) {
+                    continue;
+                }
+
+                // 2. Check for correct indicators
                 // Walk up ancestors looking for "correct" CSS class
                 let el = container;
                 for (let i = 0; i < 4 && el && el !== document.body; i++) {
@@ -727,21 +790,28 @@
                     el = el.parentElement;
                 }
 
-                // Check for checkmark icons inside the option container
+                // Check for checkmark icons in or near the container
                 if (!isMarkedCorrect) {
-                    const icons = container.querySelectorAll('i, .v-icon, svg, span[class*="icon"]');
+                    const searchRoot = container.parentElement ? container.parentElement : container;
+                    const icons = searchRoot.querySelectorAll('i, .v-icon, svg, span[class*="icon"]');
                     for (const icon of icons) {
                         const text = (icon.innerText || icon.textContent || '').trim().toLowerCase();
                         const cls = (typeof icon.className === 'string') ? icon.className : '';
+                        // Careful not to match mdi-checkbox-marked if the answer isn't actually correct,
+                        // but since we eliminated incorrect ones, it's safer.
+                        // However, just being a checked checkbox doesn't mean it's the REVEALED correct answer.
+                        // Playposit usually uses a dedicated 'check' icon for correctness.
                         if (text === 'check' || text === 'check_circle' || text === 'done' ||
                             cls.includes('mdi-check') || cls.includes('fa-check')) {
+                            // Ignore the basic checkbox/radio icons themselves unless they show validation,
+                            // but if they are the only checkmark, we'll accept it (since we prevented loops).
                             isMarkedCorrect = true;
                             break;
                         }
                     }
                 }
 
-                // Check for green color on the container or label
+                // Check for green color
                 if (!isMarkedCorrect) {
                     try {
                         const targets = [container];
@@ -768,6 +838,21 @@
 
                 if (isMarkedCorrect) {
                     correctLabels.push(this.getInputLabel(input));
+                }
+            }
+
+            // Fallback: search the feedback text for explicitly listed correct answers
+            const feedbackText = (document.querySelector('.pp-feedback, .feedback, .v-alert, .v-dialog') || document.body).innerText;
+            if (feedbackText && correctLabels.length === 0) {
+                const lowerText = feedbackText.toLowerCase();
+                if (lowerText.includes('correct answer') || lowerText.includes('correct option')) {
+                    // Check which labels appear in the text
+                    for (const input of inputs) {
+                        const label = this.getInputLabel(input);
+                        if (label && label.length > 2 && feedbackText.includes(label)) {
+                            correctLabels.push(label);
+                        }
+                    }
                 }
             }
 
