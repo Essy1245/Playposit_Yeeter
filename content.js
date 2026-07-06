@@ -738,6 +738,18 @@
                     elError = elError.parentElement;
                 }
 
+                // Explicitly check feedback blockquotes inside the option for INCORRECT
+                if (!isMarkedIncorrect) {
+                    const feedbackQuotes = container.querySelectorAll('.feedback-blockquote');
+                    for (const quote of feedbackQuotes) {
+                        const qText = (quote.innerText || quote.textContent || '').trim().toLowerCase();
+                        if (qText === 'incorrect' || qText === 'wrong') {
+                            isMarkedIncorrect = true;
+                            break;
+                        }
+                    }
+                }
+
                 if (!isMarkedIncorrect) {
                      // Check for X icons (close/clear) anywhere near the container
                      const icons = container.parentElement ? container.parentElement.querySelectorAll('i, .v-icon, svg, span[class*="icon"]') : container.querySelectorAll('i, .v-icon, svg, span[class*="icon"]');
@@ -776,18 +788,31 @@
                 }
 
                 // 2. Check for correct indicators
-                // Walk up ancestors looking for "correct" CSS class
+                // Walk up ancestors looking for "correct" or "missed" CSS class
                 let el = container;
                 for (let i = 0; i < 4 && el && el !== document.body; i++) {
                     const classStr = (typeof el.className === 'string') ? el.className : (el.className?.toString?.() || '');
                     if (/\bcorrect\b/i.test(classStr) ||
                         /\bsuccess\b/i.test(classStr) ||
                         /\bis-correct\b/i.test(classStr) ||
-                        /\bpp-correct\b/i.test(classStr)) {
+                        /\bpp-correct\b/i.test(classStr) ||
+                        /\bmissed\b/i.test(classStr)) {
                         isMarkedCorrect = true;
                         break;
                     }
                     el = el.parentElement;
+                }
+                
+                // Explicitly check feedback blockquotes inside the option
+                if (!isMarkedCorrect) {
+                    const feedbackQuotes = container.querySelectorAll('.feedback-blockquote');
+                    for (const quote of feedbackQuotes) {
+                        const qText = (quote.innerText || quote.textContent || '').trim().toLowerCase();
+                        if (qText === 'missed' || qText === 'correct') {
+                            isMarkedCorrect = true;
+                            break;
+                        }
+                    }
                 }
 
                 // Check for checkmark icons in or near the container
